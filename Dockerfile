@@ -32,6 +32,7 @@ RUN adduser --home ${CODEQL_HOME} ${USERNAME} && \
     	apt-utils \
         rsync \
     	file \
+        nodejs \
         dos2unix \
     	gettext && \
         apt-get clean && \
