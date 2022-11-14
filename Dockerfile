@@ -89,7 +89,9 @@ RUN CODEQL_VERSION=$(cat /tmp/codeql_version) && \
 ENV PATH="${CODEQL_HOME}/codeql:${PATH}"
 
 # Pre-compile our queries to save time later
-RUN codeql query compile --threads=0 ${CODEQL_HOME}/codeql-repo/*/ql/src/codeql-suites/*.qls --additional-packs=.
+# Adjusting for languages J1 is using
+RUN codeql query compile --threads=0 ${CODEQL_HOME}/codeql-repo/javascript/ql/src/codeql-suites/*.qls --additional-packs=.
+RUN codeql query compile --threads=0 ${CODEQL_HOME}/codeql-repo/go/ql/src/codeql-suites/*.qls --additional-packs=.
 RUN codeql query compile --threads=0 ${CODEQL_HOME}/codeql-go-repo/ql/src/codeql-suites/*.qls --additional-packs=.
 
 ENV PYTHONIOENCODING=utf-8
