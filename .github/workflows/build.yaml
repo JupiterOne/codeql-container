@@ -5,6 +5,7 @@ on:
       - typescript-nodejs-patch-1
 jobs:
   build-and-push:
+    runs-on: ubuntu-latest
     steps:
       - name: Check out code repository source code
         uses: actions/checkout@v3
