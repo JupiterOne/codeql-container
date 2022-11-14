@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - typescript-nodejs-patch-1
-
 jobs:
   build-and-push:
     steps:
