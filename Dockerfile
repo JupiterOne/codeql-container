@@ -41,14 +41,15 @@ RUN adduser --home ${CODEQL_HOME} ${USERNAME} && \
         ln -s /usr/bin/pip3 /usr/bin/pip 
 
 # Install .NET Core and Java for tools/builds
+# Updated to dotnet-sdk-6.0 per https://learn.microsoft.com/en-us/dotnet/core/install/linux-ubuntu#2004
 RUN cd /tmp && \
     wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && \
     dpkg -i packages-microsoft-prod.deb && \
-    apt-get update; \
+    rm packages-microsoft-prod.deb && \
+    apt-get update && \
     apt-get install -y default-jdk apt-transport-https && \
     apt-get update && \
-    rm packages-microsoft-prod.deb
-RUN apt-get install -y dotnet-sdk-3.1
+    apt-get install -y dotnet-sdk-6.0
 
 # Clone our setup and run scripts
 #RUN git clone https://github.com/microsoft/codeql-container /usr/local/startup_scripts
