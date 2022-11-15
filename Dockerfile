@@ -40,7 +40,64 @@ RUN adduser --home ${CODEQL_HOME} ${USERNAME} && \
         ln -s /usr/bin/python3.8 /usr/bin/python && \
         ln -s /usr/bin/pip3 /usr/bin/pip 
 
+# Install .NET Core and Java for tools/builds
+RUN cd /tmp && \
+    wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && \
+    dpkg -i packages-microsoft-prod.deb && \
+    rm packages-microsoft-prod.deb && \
+    apt-get update && \
+    apt-get install -y default-jdk apt-transport-https && \
+    apt-get update 
+
+# Updated to dotnet-sdk-6.0 and new install scripts per https://learn.microsoft.com/en-us/dotnet/core/install/linux-ubuntu#2004 && https://dotnet.microsoft.com/en-us/download/dotnet/3.1
+#RUN apt-get install -y dotnet-sdk-6.0
+RUN mkdir /tmp/scripts
+COPY scripts/dotnet-install.sh /tmp/scripts/
+RUN cd /tmp/scripts && \
+    chmod +x dotnet-install.sh && \
+    ./dotnet-install.sh
+
+
+# Clone our setup and run scripts
+#RUN git clone https://github.com/microsoft/codeql-container /usr/local/startup_scripts
+RUN mkdir -p /usr/local/startup_scripts
+RUN ls -al /usr/local/startup_scripts
+COPY container /usr/local/startup_scripts/
+RUN pip3 install --upgrade pip \
+    && pip3 install -r /usr/local/startup_scripts/requirements.txt
+
+# Install latest codeQL
+
+# record the latest version of the codeql-cli
+RUN python3 /usr/local/startup_scripts/get-latest-codeql-version.py > /tmp/codeql_version
+RUN mkdir -p \
+    ${CODEQL_HOME}/codeql-repo \
+    ${CODEQL_HOME}/codeql-go-repo \
+    /opt/codeql
+
+# get the latest codeql queries and record the HEAD
+RUN git clone --depth 1 https://github.com/github/codeql ${CODEQL_HOME}/codeql-repo && \
+    git --git-dir ${CODEQL_HOME}/codeql-repo/.git log --pretty=reference -1 > /opt/codeql/codeql-repo-last-commit
+RUN git clone --depth 1 https://github.com/github/codeql-go ${CODEQL_HOME}/codeql-go-repo && \
+    git --git-dir ${CODEQL_HOME}/codeql-go-repo/.git log --pretty=reference -1 > /opt/codeql/codeql-go-repo-last-commit
+
+RUN CODEQL_VERSION=$(cat /tmp/codeql_version) && \
+    wget -q https://github.com/github/codeql-cli-binaries/releases/download/${CODEQL_VERSION}/codeql-linux64.zip -O /tmp/codeql_linux.zip && \
+    unzip /tmp/codeql_linux.zip -d ${CODEQL_HOME} && \
+    rm /tmp/codeql_linux.zip
+
+ENV PATH="${CODEQL_HOME}/codeql:${PATH}"
+
+# Pre-compile our queries to save time later
+# Adjusting for languages J1 is using
+RUN codeql query compile --threads=0 --verbosity=progress+++  ${CODEQL_HOME}/codeql-repo/javascript/ql/src/codeql-suites/*.qls --additional-packs=.
+RUN codeql query compile --threads=0 --verbosity=progress+++ ${CODEQL_HOME}/codeql-repo/go/ql/src/codeql-suites/*.qls --additional-packs=.
+RUN codeql query compile --threads=0 --verbosity=progress+++  ${CODEQL_HOME}/codeql-go-repo/ql/src/codeql-suites/*.qls --additional-packs=.
+
 ENV PYTHONIOENCODING=utf-8
+
+# Change ownership of all files and directories within CODEQL_HOME to the codeql user
+RUN chown -R ${USERNAME}:${USERNAME} ${CODEQL_HOME}
 
 USER ${USERNAME}
 

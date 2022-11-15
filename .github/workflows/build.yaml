@@ -27,7 +27,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            jupiterone/codeql-container-javascript
+            jupiterone/codeql
           tags: |
             type=sha
             
@@ -40,5 +40,6 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64
-          tags: jupiterone/codeql-container-javascript:latest
+          tags: ${{ steps.meta.outputs.tags }}
+          tags: jupiterone/codeql:latest
 
