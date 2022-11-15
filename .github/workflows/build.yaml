@@ -21,12 +21,24 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
+          
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            jupiterone/security-scan
+          tags: |
+            type=sha
+            
+      - name: debug
+        run: echo ${{ steps.meta.outputs.tags }}
+      
       - name: Build and push
         uses: docker/build-push-action@v3
         with:
           context: .
           push: true
           platforms: linux/amd64
-          tags: jupiterone/codeql-container-javascript
+          tags: jupiterone/codeql-container-javascript:latest
 
